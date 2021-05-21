@@ -12,14 +12,18 @@ int LEDStrip=9; // 디지털 4번 핀을 LED 스트립으로 지정합니다.
 Adafruit_NeoPixel strip=Adafruit_NeoPixel(25, LEDStrip, NEO_GRB+NEO_KHZ800); // 네오픽셀 25개를 LED 스트립으로 지정합니다.
 DS1302 rtc(7,6,5); // 5~7번 핀에 연결되어있는 RTC 모듈을 지정합니다.
 
+int LEDStartTime=8; // LED 스트립을 켤 시간을 정합니다.
+int LEDEndTime=18; // LED 스트립을 끌 시간을 정합니다.
+
 /* 최초 1번만 실행되는 코드 */
 void setup() {
-  Serial.begin(9600); // 모니터링을 위한 시리얼 통신을 시작합니다.
-
   rtc.halt(false); // RTC 모듈의 작동 중지를 사용하지 않습니다.
   rtc.writeProtect(true); // RTC 모듈의 시간 수정 보호를 사용합니다.
   
   strip.begin(); // LED 스트립 작동을 시작합니다.
+
+  if(t.hour>=LEDStartTime && t.hour<LEDEndTime) { turnStrip(1); } // LED 스트립 작동 시간 내이면 LED 스트립을 켭니다.
+  else { turnStrip(0); } // LED 스트립 작동 시간 외이면 LED 스트립을 끕니다.
 }
 
 /* 반복 실행되는 코드 */
@@ -33,18 +37,15 @@ void loop() {
 
     /* 토양 수분 센서의 입력값이 600 미만이라면 */
     while(moistureInput<600) {
-      Serial.println(moistureInput);
+      // 워터 펌프 모터를 켜는 함수 추가
       moistureInput=analogRead(moistureSensor); // 토양 수분 센서의 입력값을 moistureInput 변수에 저장합니다.
     }
   }
-  
-  // 오전 8시에
-  if(t.hour==8) {
-    turnStrip(1); // LED 스트립을 켭니다
-  }
-  // 오후 6시에
-  else if(t.hour==18) {
-    turnStrip(0); // LED 스트립을 끕니다
+
+  /* 매시 3분 이하마다 */
+  if(t.min<=3) {
+    if(t.hour==LEDStartTime) { turnStrip(1); } // LED 스트립을 켤 시간이 되면 LED 스트립을 켭니다.
+    else if(t.hour==LEDEndTime) { turnStrip(0); } // LED 스트립을 끌 시간이 되면 LED 스트립을 끕니다.
   }
 }
 
@@ -52,27 +53,15 @@ void loop() {
 void turnStrip(boolean onoff) {
   /* onoff 매개변수가 1이라면 */
   if(onoff==1) {
-    /* 홀수번째의 LED는 빨간색으로 지정합니다. */
-    for(int i=0; i<25; i+=2) {
-      strip.setPixelColor(i,255,0,0,255);
-    }
-    /* 짝수번째의 LED는 파란색으로 지정합니다. */
-    for(int i=1; i<25; i+=2) {
-      strip.setPixelColor(i,0,0,255,255);
-    }
+    for(int i=0; i<25; i+=2) { strip.setPixelColor(i,255,0,0,255); } // 홀수번째의 LED는 빨간색으로 지정합니다.
+    for(int i=1; i<25; i+=2) { strip.setPixelColor(i,0,0,255,255); } // 짝수번째의 LED는 파란색으로 지정합니다.
   strip.show(); // LED 스트립을 지정된 색으로 켭니다.
   }
 
   /* onoff 매개변수가 0이라면 */
   else if(onoff==0) {
-    /* 홀수번째의 LED는 빨간색으로 지정합니다. */
-    for(int i=0; i<25; i+=2) {
-      strip.setPixelColor(i,0,0,0,0);
-    }
-    /* 짝수번째의 LED는 파란색으로 지정합니다. */
-    for(int i=1; i<25; i+=2) {
-      strip.setPixelColor(i,0,0,0,0);
-    }
+    for(int i=0; i<25; i+=2) { strip.setPixelColor(i,0,0,0,0); } // 홀수번째의 LED는 빨간색으로 지정합니다.
+    for(int i=1; i<25; i+=2) { strip.setPixelColor(i,0,0,0,0); } // 짝수번째의 LED는 파란색으로 지정합니다.
   strip.show(); // LED 스트립을 지정된 색으로 켭니다.
   }
 }
